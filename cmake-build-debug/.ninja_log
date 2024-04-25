@@ -1,3 +1,6 @@
 # ninja log v5
-1	15	1714047877932274312	CMakeFiles/bsServer.dir/main.c.o	8d9a77e402c6ff8d
 16	28	1714047877944274346	bsServer	52ba69c13e62e892
+1	15	1714047877932274312	CMakeFiles/bsServer.dir/main.c.o	8d9a77e402c6ff8d
+1	9	1714048630364384831	CMakeFiles/bsServer.dir/sub.c.o	cba65e79dad55af6
+1	9	1714048630364384831	CMakeFiles/bsServer.dir/keyValStore.c.o	b42f3caf900aae1f
+9	23	1714048630377384868	bsServer	d58df02dae717845

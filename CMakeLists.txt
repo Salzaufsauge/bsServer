@@ -3,4 +3,8 @@ project(bsServer C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(bsServer main.c)
+add_executable(bsServer main.c
+        keyValStore.c
+        keyValStore.h
+        sub.h
+        sub.c)
