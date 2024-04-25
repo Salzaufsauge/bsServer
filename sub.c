@@ -3,3 +3,15 @@
 //
 #include "sub.h"
 
+
+int put(char *key, char *val) {
+
+}
+
+int get(char *key, char *res) {
+
+}
+
+int del(char *key) {
+
+}
