@@ -7,4 +7,6 @@ add_executable(bsServer main.c
         keyValStore.c
         keyValStore.h
         sub.h
-        sub.c)
+        sub.c
+        helper.h
+        helper.cpp)
