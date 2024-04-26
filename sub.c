@@ -8,24 +8,38 @@ void startServer() {
 
 void analyze(int *socket, char *buffer) {
     char *cmd = strsep(&buffer, " ");
-    if (!strcmp(cmd, "QUIT"))
+    if (!strcmp(cmd, "QUIT")) {
         quit(socket);
+        return;
+    }
     char *key = strsep(&buffer, " ");
     if (!strcmp(cmd, "PUT")) {
         put(key, buffer);
-        send(socket, cmd, key, buffer);
+        sendToSocket(socket, cmd, key, buffer);
     } else if (!strcmp(cmd, "GET")) {
-        char res[];
-        get(key, res);
-        send(socket, cmd, key, res);
+        char res[128];
+        if(get(key, res) < 0) {
+            error("Key not found");
+            return;
+        }
+        sendToSocket(socket, cmd, key, res);
     } else if (!strcmp(cmd, "DEL")) {
-        del(key);
-        send(socket, cmd, key);
+        if(del(key) < 0) {
+            error("Key not found");
+            return;
+        }
+        sendToSocket(socket, cmd, key,buffer);
     } else {
         error("Error: Invalid command");
-        char *str = strcat("Error: invalid command: ", buffer);
-        write(*socket, str, strlen(str));
+        // char *str = strcat("Error: invalid command: ", cmd);
+        // write(*socket, str, strlen(str));
     }
+}
+
+void quit(int *socket) {
+    char str[] = "Exiting from server";
+    write(*socket,str,strlen(str));
+    close(*socket);
 }
 
 int put(char *key, char *val) {
@@ -35,20 +49,21 @@ int put(char *key, char *val) {
     }
     if (!val[0]) {
         error("Error: No value");
-        return -2;
+        return -1;
     }
     Key newKey;
     strcpy(newKey.keyName, key);
     strcpy(newKey.keyVal, val);
     growList(&keys, newKey);
-    return 1;
+    return 0;
 }
 
 int get(char *key, char *res) {
-    for (int i = 0; keys.capacity; i++) {
-        if (key == keys.key[i].keyName) {
-            *res = keys.key[i].keyVal;
-            return 1;
+    int keyCapacity = keys.capacity;
+    for (int i = 0; i < keyCapacity; i++) {
+        if (!strcmp(key, keys.key[i].keyName)) {
+            strcpy(res,keys.key[i].keyVal);
+            return 0;
         }
     }
     error("Error: Couldn't find key");
@@ -56,9 +71,11 @@ int get(char *key, char *res) {
 }
 
 int del(char *key) {
-    for (int i = 0; keys.capacity; i++) {
-        if (key == keys.key[i].keyName) {
+    int keyCapacity = keys.capacity;
+    for (int i = 0; i < keyCapacity; i++) {
+        if (!strcmp(key,keys.key[i].keyName)) {
             deleteFromList(&keys, i);
+            return 0;
         }
     }
     error("Error: Couldn't find key");

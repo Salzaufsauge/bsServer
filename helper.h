@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 
-int send(int *socket, char *cmd, char *key, char *val = "");
+int sendToSocket(int *socket, char *cmd, char *key, char *val);
 
 void error(char *msg);
 

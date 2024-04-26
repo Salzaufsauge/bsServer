@@ -67,6 +67,12 @@ build CMakeFiles/bsServer.dir/sub.c.o: C_COMPILER__bsServer_unscanned_Debug /hom
   OBJECT_DIR = CMakeFiles/bsServer.dir
   OBJECT_FILE_DIR = CMakeFiles/bsServer.dir
 
+build CMakeFiles/bsServer.dir/helper.c.o: C_COMPILER__bsServer_unscanned_Debug /home/leon/CLionProjects/bsServer/helper.c || cmake_object_order_depends_target_bsServer
+  DEP_FILE = CMakeFiles/bsServer.dir/helper.c.o.d
+  FLAGS = -g -std=gnu2x -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/bsServer.dir
+  OBJECT_FILE_DIR = CMakeFiles/bsServer.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target bsServer
@@ -75,7 +81,7 @@ build CMakeFiles/bsServer.dir/sub.c.o: C_COMPILER__bsServer_unscanned_Debug /hom
 #############################################
 # Link the executable bsServer
 
-build bsServer: C_EXECUTABLE_LINKER__bsServer_Debug CMakeFiles/bsServer.dir/main.c.o CMakeFiles/bsServer.dir/keyValStore.c.o CMakeFiles/bsServer.dir/sub.c.o
+build bsServer: C_EXECUTABLE_LINKER__bsServer_Debug CMakeFiles/bsServer.dir/main.c.o CMakeFiles/bsServer.dir/keyValStore.c.o CMakeFiles/bsServer.dir/sub.c.o CMakeFiles/bsServer.dir/helper.c.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/bsServer.dir
   POST_BUILD = :

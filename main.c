@@ -3,14 +3,23 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
+// #include <signal.h>
 #include "sub.h"
 #include "helper.h"
 
 #define PORT 5678
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 256
+
+// int terminateServer = 0;
+//
+// void signalTermination(int signal) {
+//     printf("Terminating Server");
+//     terminateServer = 1;
+// }
 
 int main(int argc, char *argv[]) {
     //startup server
+    // signal(SIGINT,signalTermination);
     startServer();
     int sockfd;
     socklen_t clilen;
@@ -34,15 +43,41 @@ int main(int argc, char *argv[]) {
 
     //listen
     listen(sockfd, 5);
-    clilen = sizeof(cli_addr);
-    int newSoc = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-    if (newSoc < 0)
-        error("Failed accepting socket!");
-    bzero(buffer,BUFFER_SIZE);
-    int n = read(newSoc, buffer,BUFFER_SIZE - 1);
-    printf("received following message: %s\n", buffer);
-    n = write(newSoc, "Hello,world!\n", 13);
-    close(newSoc);
+    while(1) {
+        clilen = sizeof(cli_addr);
+        int cliSoc = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        if (cliSoc < 0)
+            error("Failed accepting socket!");
+        while(1) {
+            bzero(buffer,BUFFER_SIZE);
+            int n = read(cliSoc, buffer,BUFFER_SIZE - 1);
+
+            if(n < 0) {
+                error("Error: read failed");
+                break;
+            } else if(n == 0) {
+                printf("Connection closed");
+                close(cliSoc);
+
+                break;
+            } else {
+                buffer[n-2] = '\0';
+
+                //printf("received following message: %s", buffer);
+                analyze(&cliSoc,buffer);
+                //n = write(cliSoc, buffer, sizeof(buffer));
+            }
+
+        }
+        // if (fgets(buffer, BUFFER_SIZE, stdin) != NULL) {
+        //     if (buffer[0] == 'quit') {
+        //         printf("Quitting server.\n");
+        //         close(sockfd);
+        //         return 0;
+        //     }
+        // }
+    }
+    //printf("Quitting server.\n");
     close(sockfd);
     return 0;
 }
