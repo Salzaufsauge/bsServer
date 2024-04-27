@@ -1,3 +1,4 @@
+//Bibliotheken einbinden
 #include <stdio.h>
 #include <strings.h>
 #include <sys/socket.h>
@@ -7,6 +8,7 @@
 #include "sub.h"
 #include "helper.h"
 
+// Globale Variablen definieren
 #define PORT 5678
 #define BUFFER_SIZE 256
 
@@ -17,6 +19,7 @@
 //     terminateServer = 1;
 // }
 
+
 int main(int argc, char *argv[]) {
     //startup server
     // signal(SIGINT,signalTermination);
@@ -24,7 +27,11 @@ int main(int argc, char *argv[]) {
     int sockfd;
     socklen_t clilen;
     char buffer[BUFFER_SIZE];
+
+    //Soccetadresse
     struct sockaddr_in serv_addr, cli_addr;
+
+    // Socket erstellen mit Fehlerausgabe
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("Failed opening socket!");
