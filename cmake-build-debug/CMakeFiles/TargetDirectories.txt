@@ -1,3 +1,0 @@
-/home/leon/CLionProjects/bsServer/cmake-build-debug/CMakeFiles/bsServer.dir
-/home/leon/CLionProjects/bsServer/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/leon/CLionProjects/bsServer/cmake-build-debug/CMakeFiles/rebuild_cache.dir
