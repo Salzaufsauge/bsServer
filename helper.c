@@ -1,28 +1,32 @@
 #include "helper.h"
 
-int sendToSocket(int *socket, char *cmd, char *key, char *val) {
-    const int del = strcmp(cmd, "DEL");
-    if (!key) {
-        error("Key missing");
+int isNullOrEmpty(char *str) {
+    return !(int)str || !*str;
+}
+
+int sendFormatedSocket(int *socket, char *cmd, char *key, char *val) {
+    if (isNullOrEmpty(key) || isNullOrEmpty(val)) {
+        perror("Error: Key/Value missing");
+        sendToSocket(socket, "Error: Invalid input\n");
         return -1;
     }
-    char str[256]; // Allocate memory for str
-    if (!del) {
-        sprintf(str, "%s:%s\n", cmd, key); // Format string correctly
-    } else {
-        if (!val) {
-            error("Value missing");
-            return -1;
-        }
-        sprintf(str, "%s:%s:%s\n", cmd, key, val); // Format string correctly
-    }
-    if (write(*socket, str, strlen(str)) < 0) {
-        error("Failed writing to socket!");
+
+    char str[BUFFER_SIZE + 3];
+    sprintf(str, "%s:%s:%s\n", cmd, key, val);
+
+    return sendToSocket(socket, str);
+}
+
+
+int sendToSocket(const int *socket, const char *msg) {
+    if (write(*socket, msg, strlen(msg)) < 0) {
+        perror("Error: Failed writing to socket!");
         return -1;
     }
     return 0;
 }
 
-void error(char *msg) {
+void error(const char *msg, const int exitcode) {
     perror(msg);
+    exit(exitcode);
 }

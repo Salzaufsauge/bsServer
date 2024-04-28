@@ -3,38 +3,48 @@
 void initList(KeyList targetList[]) {
     targetList->key = (Key *) malloc(1 * sizeof(Key));
     if (targetList->key == NULL)
-        error("Failed initializing KeyList");
+        perror("Error: Failed initializing KeyList");
     targetList->curSize = 0;
     targetList->capacity = 1;
 }
 
-void growList(KeyList targetList[], const Key data) {
+int appendList(KeyList targetList[], const Key data) {
+    if(isNullOrEmpty(data.keyName) || isNullOrEmpty(data.keyVal) || strlen(data.keyName) > KEY_NAME_LENGTH - 1 || strlen(data.keyVal) > KEY_VALUE_LENGTH - 1) {
+        perror("Error: invalid data");
+        return -1;
+    }
     targetList->capacity++;
     targetList->key = (Key *) realloc(targetList->key, targetList->capacity * sizeof(Key));
     if (targetList->key == NULL)
-        error("Failed resizing KeyList");
+        perror("Error: Failed resizing KeyList");
     targetList->key[targetList->curSize++] = data;
+    return 0;
 }
 
-void deleteFromList(KeyList targetList[], const int element) {
-    if (element < 0 || element >= targetList->curSize) {
-        error("invalid element");
-        return;
+int overwrite(KeyList targetList[], const Key data, int element) {
+    if(element < 0 || element >= targetList->curSize) {
+        perror("Error: invalid element");
+        return -1;
     }
-    Key *temp = (Key *)malloc((targetList->capacity-1) * sizeof(Key));
-    if(element)
-        memcpy(temp,targetList->key,element * sizeof(Key));
-    if(element != (targetList->curSize - 1))
-        memcpy(temp+element,targetList->key + element + 1, (targetList->curSize - element - 1) * sizeof(Key));
-    for(int i = 0; i < targetList->curSize;i++)
-        printf("%s\n",temp[i].keyName);
+    targetList->key[element] = data;
+    return 0;
+}
+
+int deleteFromList(KeyList targetList[], const int element) {
+    if (element < 0 || element >= targetList->curSize) {
+        perror("Error: invalid element");
+        return -1;
+    }
+    const auto temp = (Key *) malloc((targetList->capacity - 1) * sizeof(Key));
+    if (element)
+        memcpy(temp, targetList->key, element * sizeof(Key));
+    if (element != (targetList->curSize - 1))
+        memcpy(temp + element,
+               targetList->key + element + 1,
+               (targetList->curSize - element - 1) * sizeof(Key));
     free(targetList->key);
     targetList->key = temp;
-
-    // int listSize = targetList->curSize;
-    // free(&targetList->key[listSize]);
-    // for (int i = element; i < listSize - 1; i++)
-    //     targetList->key[i] = targetList->key[i + 1];
     targetList->capacity--;
     targetList->curSize--;
+    return 0;
 }

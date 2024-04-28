@@ -3,11 +3,14 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include "defines.h"
 #include "helper.h"
 
+//might replace with hashtable + list
+
 typedef struct {
-    char keyName[32];
-    char keyVal[128];
+    char keyName[KEY_NAME_LENGTH];
+    char keyVal[KEY_VALUE_LENGTH];
 } Key;
 
 typedef struct {
@@ -18,8 +21,10 @@ typedef struct {
 
 void initList(KeyList targetList[]);
 
-void growList(KeyList targetList[], const Key data);
+int appendList(KeyList targetList[], const Key data);
 
-void deleteFromList(KeyList targetList[], int element);
+int overwrite(KeyList targetList[], const Key data, int element);
+
+int deleteFromList(KeyList targetList[], int element);
 
 #endif //KEYVALSTORE_H

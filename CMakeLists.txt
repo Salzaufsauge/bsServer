@@ -9,4 +9,5 @@ add_executable(bsServer main.c
         sub.h
         sub.c
         helper.h
-        helper.c)
+        helper.c
+        defines.h)
