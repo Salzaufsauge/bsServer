@@ -7,7 +7,7 @@ void initList(KeyList targetList[]) {
     targetList->curSize = 0;
     targetList->capacity = 1;
 }
-
+//resizes KeyList and appends 1 Key
 int appendList(KeyList targetList[], const Key data) {
     if(isNullOrEmpty(data.keyName) || isNullOrEmpty(data.keyVal) || strlen(data.keyName) > KEY_NAME_LENGTH - 1 || strlen(data.keyVal) > KEY_VALUE_LENGTH - 1) {
         perror("Error: invalid data");
@@ -21,7 +21,7 @@ int appendList(KeyList targetList[], const Key data) {
     return 0;
 }
 
-int overwrite(KeyList targetList[], const Key data, int element) {
+int overwrite(KeyList targetList[], const Key data, const int element) {
     if(element < 0 || element >= targetList->curSize) {
         perror("Error: invalid element");
         return -1;
@@ -29,19 +29,22 @@ int overwrite(KeyList targetList[], const Key data, int element) {
     targetList->key[element] = data;
     return 0;
 }
-
+//Deletes element n from list and shrinks list
 int deleteFromList(KeyList targetList[], const int element) {
     if (element < 0 || element >= targetList->curSize) {
         perror("Error: invalid element");
         return -1;
     }
     const auto temp = (Key *) malloc((targetList->capacity - 1) * sizeof(Key));
+    //if element > 0 copies all values before element into temp
     if (element)
         memcpy(temp, targetList->key, element * sizeof(Key));
+    //copies all values after element if element isn't last
     if (element != (targetList->curSize - 1))
         memcpy(temp + element,
                targetList->key + element + 1,
                (targetList->curSize - element - 1) * sizeof(Key));
+    //frees old memory
     free(targetList->key);
     targetList->key = temp;
     targetList->capacity--;

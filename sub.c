@@ -3,16 +3,17 @@
 KeyList keys;
 
 int startServer() {
+    //init value storage
     initList(&keys);
+    //create socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
+    //set socket options and check if socket creation was successful
     if (sockfd < 0)
         error("Error: Failed opening socket!", -1);
     if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)) < 0)
         error("Error: Failed setting options", -2);
-
+    //set address settings
     struct sockaddr_in serv_addr = {0};
-    //bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -30,20 +31,21 @@ int startServer() {
 
 void mainLoop(const int *serverSocket) {
     struct sockaddr_in cli_addr;
-    socklen_t clilen;
+    socklen_t clilen = sizeof(cli_addr);
     while (1) {
-        clilen = sizeof(cli_addr);
+        //accept client TODO: Add multiclient support
         int cliSoc = accept(*serverSocket, (struct sockaddr *) &cli_addr, &clilen);
         if (cliSoc < 0)
             perror("Failed accepting socket!");
+        sendToSocket(&cliSoc,"Write HELP to receive a list of possible commands!\n");
         handleClient(&cliSoc);
     }
 }
-
+//Client read and write
 void handleClient(int *clientSocket) {
     char buffer[BUFFER_SIZE];
     while (1) {
-        bzero(buffer,BUFFER_SIZE);
+        //Blocks untill receiving data from client
         int n = read(*clientSocket, buffer,BUFFER_SIZE - 1);
 
         if (n < 0) {
@@ -55,13 +57,15 @@ void handleClient(int *clientSocket) {
             close(*clientSocket);
             break;
         } else {
+            //Client send \r\n replaces the \r wit \0
             buffer[n - 2] = '\0';
             analyze(clientSocket, buffer);
         }
     }
 }
-
+//Analyzes the input of the client
 void analyze(int *socket, char *buffer) {
+    //seperate command and key from value
     char *cmd = strsep(&buffer, " ");
     char *key = strsep(&buffer, " ");
     if (!strcmp(cmd, "QUIT")) {
@@ -88,6 +92,8 @@ void analyze(int *socket, char *buffer) {
             return;
         }
         sendFormatedSocket(socket, cmd, key, "key_deleted");
+    } else if(!strcmp(cmd, "HELP")){
+        sendToSocket(socket,commandList);
     } else {
         perror("Error: Invalid command");
         char str[128];
@@ -95,7 +101,7 @@ void analyze(int *socket, char *buffer) {
         write(*socket, str, strlen(str));
     }
 }
-
+//Gracefully quits by stoping the client from reading and writing
 void quit(const int *socket) {
     constexpr char str[] = "Exiting from server\n";
     write(*socket, str, strlen(str));
@@ -107,9 +113,11 @@ int put(char *key, char *val) {
         perror("Error: invalid data!");
         return -1;
     }
+
     Key newKey;
     strcpy(newKey.keyName, key);
     strcpy(newKey.keyVal, val);
+    //If key already exists overwrites old key
     const int keyCapacity = keys.capacity;
     for (int i = 0; i < keyCapacity; i++) {
         if (!strcmp(key, keys.key[i].keyName)) {
@@ -128,6 +136,7 @@ int get(char *key, char *res) {
         perror("Error: invalid key");
         return -1;
     }
+    //look if key exists if yes copy string into res
     const int keyCapacity = keys.capacity;
     for (int i = 0; i < keyCapacity; i++) {
         if (!strcmp(key, keys.key[i].keyName)) {
@@ -144,6 +153,7 @@ int del(char *key) {
         perror("Error: invalid key");
         return -1;
     }
+    //If key exists delete it
     const int keyCapacity = keys.capacity;
     for (int i = 0; i < keyCapacity; i++) {
         if (!strcmp(key, keys.key[i].keyName)) {
