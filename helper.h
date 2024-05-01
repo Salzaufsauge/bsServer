@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "defines.h"
+#include <sys/socket.h>
 
 int isNullOrEmpty(char *str);
 

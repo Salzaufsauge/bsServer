@@ -32,13 +32,23 @@ int startServer() {
 void mainLoop(const int *serverSocket) {
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
+    int pid;
     while (1) {
         //accept client TODO: Add multiclient support
         int cliSoc = accept(*serverSocket, (struct sockaddr *) &cli_addr, &clilen);
         if (cliSoc < 0)
-            perror("Failed accepting socket!");
-        sendToSocket(&cliSoc,"Write HELP to receive a list of possible commands!\n");
-        handleClient(&cliSoc);
+            error("Error: Failed accepting socket!", -1);
+        pid = fork();
+        if(pid < 0)
+            error("Error: Failed forking",-1);
+        if(pid == 0) {
+            close(*serverSocket);
+            sendToSocket(&cliSoc,"Write HELP to receive a list of possible commands!\n");
+            handleClient(&cliSoc);
+            exit(0);
+        }
+        else
+            close(cliSoc);
     }
 }
 //Client read and write
@@ -46,18 +56,18 @@ void handleClient(int *clientSocket) {
     char buffer[BUFFER_SIZE];
     while (1) {
         //Blocks untill receiving data from client
-        int n = read(*clientSocket, buffer,BUFFER_SIZE - 1);
+        int n = recv(*clientSocket, buffer,BUFFER_SIZE - 1,0);
 
         if (n < 0) {
             perror("Error: read failed");
             close(*clientSocket);
             break;
         } else if (n == 0) {
-            printf("Connection closed");
+            printf("Connection closed\n");
             close(*clientSocket);
             break;
         } else {
-            //Client send \r\n replaces the \r wit \0
+            //Client send \r\n replaces the \r with \0
             buffer[n - 2] = '\0';
             analyze(clientSocket, buffer);
         }

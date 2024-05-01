@@ -9,7 +9,10 @@ void initList(KeyList targetList[]) {
 }
 //resizes KeyList and appends 1 Key
 int appendList(KeyList targetList[], const Key data) {
-    if(isNullOrEmpty(data.keyName) || isNullOrEmpty(data.keyVal) || strlen(data.keyName) > KEY_NAME_LENGTH - 1 || strlen(data.keyVal) > KEY_VALUE_LENGTH - 1) {
+    if(isNullOrEmpty(data.keyName)
+        || isNullOrEmpty(data.keyVal)
+        || strlen(data.keyName) > KEY_NAME_LENGTH - 1
+        || strlen(data.keyVal) > KEY_VALUE_LENGTH - 1) {
         perror("Error: invalid data");
         return -1;
     }

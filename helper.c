@@ -1,5 +1,7 @@
 #include "helper.h"
 
+
+
 int isNullOrEmpty(char *str) {
     return !(int)str || !*str;
 }
@@ -19,7 +21,7 @@ int sendFormatedSocket(int *socket, char *cmd, char *key, char *val) {
 
 
 int sendToSocket(const int *socket, const char *msg) {
-    if (write(*socket, msg, strlen(msg)) < 0) {
+    if (send(*socket, msg, strlen(msg),0) < 0) {
         perror("Error: Failed writing to socket!");
         return -1;
     }

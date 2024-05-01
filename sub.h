@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <semaphore.h>
 #include <string.h>
 #include <unistd.h>
 #include "defines.h"
