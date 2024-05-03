@@ -71,10 +71,13 @@ void closeServer(const int serverSocket, const int shmid, const KeyList *keys) {
 
     if(semctl(semID, 1,IPC_RMID, 0) < 0)
         error("Error on closeServer: Failed deleting semaphore 1",-1);
+
     if (shmdt(keys) < 0)
         error("Error on closeServer: Failed detatching shared memory", -1);
+
     if (shmctl(shmid, IPC_RMID, 0) < 0)
         error("Error on closeServer: Failed deleting shared memory", -1);
+
     close(serverSocket);
 }
 
@@ -153,6 +156,14 @@ void analyze(int serverSocket, KeyList *keys, char *buffer) {
         sendFormatedSocket(serverSocket, cmd, key, "key_deleted");
     } else if (!strcmp(cmd, "HELP")) {
         sendToSocket(serverSocket, commandList);
+    } else if (!strcmp(cmd, "BEG")) {
+
+    } else if (!strcmp(cmd, "END")) {
+
+    } else if (!strcmp(cmd, "PUB")) {
+
+    } else if (!strcmp(cmd, "SUB")) {
+
     } else {
         perror("Error: Invalid command");
         char str[128];
