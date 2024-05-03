@@ -8,6 +8,7 @@
 #include "defines.h"
 #include <sys/socket.h>
 
+
 int isNullOrEmpty(char *str);
 
 int sendFormatedSocket(int *socket, char *cmd, char *key, char *val);

@@ -1,10 +1,40 @@
 #include "sub.h"
 
-KeyList keys;
+volatile sig_atomic_t stop;
 
-int startServer() {
-    //init value storage
-    initList(&keys);
+struct sembuf up[2], down[2];
+int semID, readcount;
+
+
+void sig_handler(int signum) {
+    stop = 1;
+}
+
+int startServer(int *shmid, KeyList *keys) {
+    semID = semget(IPC_PRIVATE, 2,IPC_CREAT | 0644);
+    if (semID < 0)
+        error("Error: Failed creating semaphore group!", -1);
+    semctl(semID, 0,SETVAL, 1);
+    semctl(semID, 1, SETVAL, 1);
+
+    down[0].sem_num = 0;
+    down[0].sem_op = -1;
+    down[0].sem_flg = SEM_UNDO;
+
+    up[0].sem_num = 0;
+    up[0].sem_op = 1;
+    up[0].sem_flg = SEM_UNDO;
+
+    down[1].sem_num = 1;
+    down[1].sem_op = -1;
+    down[1].sem_flg = SEM_UNDO;
+
+    up[1].sem_num = 1;
+    up[1].sem_op = 1;
+    up[1].sem_flg = SEM_UNDO;
+
+    readcount = 0;
+
     //create socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     //set socket options and check if socket creation was successful
@@ -12,6 +42,7 @@ int startServer() {
         error("Error: Failed opening socket!", -1);
     if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)) < 0)
         error("Error: Failed setting options", -2);
+
     //set address settings
     struct sockaddr_in serv_addr = {0};
     serv_addr.sin_family = AF_INET;
@@ -23,40 +54,49 @@ int startServer() {
         error("Error: Failed binding socket!", -3);
 
     //listen
-    if(listen(sockfd, 10) < 0)
-        error("Error: Failed listening on socket",-4);
+    if (listen(sockfd, 10) < 0)
+        error("Error: Failed listening on socket", -4);
 
     return sockfd;
 }
 
-void mainLoop(const int *serverSocket) {
+void closeServer(const int *sockfd, const int *shmid, const KeyList *keys) {
+    semctl(semID, 0,IPC_RMID, 0);
+    semctl(semID, 1,IPC_RMID, 0);
+    if (shmdt(keys) < 0)
+        error("Error: Failed detatching shared memory", -1);
+    if (shmctl(*shmid, IPC_RMID, 0) < 0)
+        error("Error: Failed deleting shared memory", -1);
+    close(*sockfd);
+}
+
+void mainLoop(const int *serverSocket, KeyList *keys) {
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
-    int pid;
-    while (1) {
+    while (!stop) {
         //accept client TODO: Add multiclient support
         int cliSoc = accept(*serverSocket, (struct sockaddr *) &cli_addr, &clilen);
         if (cliSoc < 0)
-            error("Error: Failed accepting socket!", -1);
-        pid = fork();
-        if(pid < 0)
-            error("Error: Failed forking",-1);
-        if(pid == 0) {
+            perror("Error: Failed accepting socket!");
+        int pid = fork();
+        if (pid < 0)
+            error("Error: Failed forking", -1);
+        if (pid == 0) {
             close(*serverSocket);
-            sendToSocket(&cliSoc,"Write HELP to receive a list of possible commands!\n");
-            handleClient(&cliSoc);
+            sendToSocket(&cliSoc, "Write HELP to receive a list of possible commands!\n");
+            handleClient(&cliSoc, keys);
             exit(0);
-        }
-        else
+        } else
             close(cliSoc);
     }
 }
+
 //Client read and write
-void handleClient(int *clientSocket) {
+void handleClient(int *clientSocket, KeyList *keys) {
     char buffer[BUFFER_SIZE];
-    while (1) {
+    while (!stop) {
         //Blocks untill receiving data from client
-        int n = recv(*clientSocket, buffer,BUFFER_SIZE - 1,0);
+        int n = recv(*clientSocket, buffer,BUFFER_SIZE - 1, 0);
 
         if (n < 0) {
             perror("Error: read failed");
@@ -69,19 +109,20 @@ void handleClient(int *clientSocket) {
         } else {
             //Client send \r\n replaces the \r with \0
             buffer[n - 2] = '\0';
-            analyze(clientSocket, buffer);
+            analyze(clientSocket, keys, buffer);
         }
     }
 }
+
 //Analyzes the input of the client
-void analyze(int *socket, char *buffer) {
+void analyze(int *socket, KeyList *keys, char *buffer) {
     //seperate command and key from value
     char *cmd = strsep(&buffer, " ");
     char *key = strsep(&buffer, " ");
     if (!strcmp(cmd, "QUIT")) {
         quit(socket);
     } else if (!strcmp(cmd, "PUT")) {
-        if (put(key, buffer) < 0) {
+        if (put(keys, key, buffer) < 0) {
             perror("Error: Invalid input");
             sendFormatedSocket(socket, cmd, key, "invalid_input");
             return;
@@ -89,21 +130,21 @@ void analyze(int *socket, char *buffer) {
         sendFormatedSocket(socket, cmd, key, buffer);
     } else if (!strcmp(cmd, "GET")) {
         char res[192];
-        if (get(key, res) < 0) {
+        if (get(keys, key, res) < 0) {
             perror("Error: Key not found");
             sendFormatedSocket(socket, cmd, key, "key_nonexistent");
             return;
         }
         sendFormatedSocket(socket, cmd, key, res);
     } else if (!strcmp(cmd, "DEL")) {
-        if (del(key) < 0) {
+        if (del(keys, key) < 0) {
             perror("Error: Key not found");
             sendFormatedSocket(socket, cmd, key, "key_nonexistent");
             return;
         }
         sendFormatedSocket(socket, cmd, key, "key_deleted");
-    } else if(!strcmp(cmd, "HELP")){
-        sendToSocket(socket,commandList);
+    } else if (!strcmp(cmd, "HELP")) {
+        sendToSocket(socket, commandList);
     } else {
         perror("Error: Invalid command");
         char str[128];
@@ -111,6 +152,7 @@ void analyze(int *socket, char *buffer) {
         write(*socket, str, strlen(str));
     }
 }
+
 //Gracefully quits by stoping the client from reading and writing
 void quit(const int *socket) {
     constexpr char str[] = "Exiting from server\n";
@@ -118,7 +160,7 @@ void quit(const int *socket) {
     shutdown(*socket,SHUT_RDWR);
 }
 
-int put(char *key, char *val) {
+int put(KeyList *keys, char *key, char *val) {
     if (isNullOrEmpty(key) || isNullOrEmpty(val) || strpbrk(val,INVALID_CHARACTERS)) {
         perror("Error: invalid data!");
         return -1;
@@ -127,51 +169,108 @@ int put(char *key, char *val) {
     Key newKey;
     strcpy(newKey.keyName, key);
     strcpy(newKey.keyVal, val);
+
+    enterWrite();
+
     //If key already exists overwrites old key
-    const int keyCapacity = keys.capacity;
+    const int keyCapacity = keys->curSize + 1;
     for (int i = 0; i < keyCapacity; i++) {
-        if (!strcmp(key, keys.key[i].keyName)) {
-            if(overwrite(&keys, newKey, i) < 0)
+        if (!strcmp(key, keys->key[i].keyName)) {
+            if (overwrite(keys, newKey, i) < 0) {
+                exitWrite();
                 return -1;
+            }
+            exitWrite();
             return 0;
         }
     }
-    if(appendList(&keys, newKey) < 0)
+    if (appendList(keys, newKey) < 0) {
+        exitWrite();
         return -1;
+    }
+    exitWrite();
     return 0;
 }
 
-int get(char *key, char *res) {
-    if(isNullOrEmpty(key)) {
+int get(KeyList *keys, char *key, char *res) {
+    if (isNullOrEmpty(key)) {
         perror("Error: invalid key");
         return -1;
     }
+
+    enterRead();
+
     //look if key exists if yes copy string into res
-    const int keyCapacity = keys.capacity;
+    const int keyCapacity = keys->curSize + 1;
     for (int i = 0; i < keyCapacity; i++) {
-        if (!strcmp(key, keys.key[i].keyName)) {
-            strcpy(res, keys.key[i].keyVal);
+        if (!strcmp(key, keys->key[i].keyName)) {
+            strcpy(res, keys->key[i].keyVal);
+            exitRead();
             return 0;
         }
     }
+
+    exitRead();
+
     perror("Error: Couldn't find key");
     return -1;
 }
 
-int del(char *key) {
-    if(isNullOrEmpty(key)) {
+int del(KeyList *keys, char *key) {
+    if (isNullOrEmpty(key)) {
         perror("Error: invalid key");
         return -1;
     }
+
+    enterWrite();
+
     //If key exists delete it
-    const int keyCapacity = keys.capacity;
+    const int keyCapacity = keys->curSize + 1;
     for (int i = 0; i < keyCapacity; i++) {
-        if (!strcmp(key, keys.key[i].keyName)) {
-            if(deleteFromList(&keys, i) < 0)
+        if (!strcmp(key, keys->key[i].keyName)) {
+            if (deleteFromList(keys, i) < 0) {
+                exitWrite();
                 return -1;
+            }
+            exitWrite();
             return 0;
         }
     }
+
+    exitWrite();
+
     perror("Error: Couldn't find key");
     return -1;
+}
+
+void enterRead() {
+    if (semop(semID, &down[1], 1) < 0)
+        perror("Error on enterRead: Failed blocking reader");
+    readcount++;
+    if (readcount == 1)
+        if (semop(semID, &down[0], 1) < 0)
+            perror("Error on enterRead: Failed blocking writer");
+    if (semop(semID, &up[1], 1) < 0)
+        perror("Error on enterRead: Failed unblocking reader");
+}
+
+void exitRead() {
+    if (semop(semID, &down[1], 1) < 0)
+        perror("Error on exitRead: Failed blocking reader");
+    readcount--;
+    if (readcount == 0)
+        if (semop(semID, &up[0], 1) < 0)
+            perror("Error on exitRead: Failed unblocking writer");
+    if (semop(semID, &up[1], 1) < 0)
+        perror("Error on exitRead: Failed unblocking reader");
+}
+
+void enterWrite() {
+    if (semop(semID, &down[0], 1) < 0)
+        perror("Error on enterWrite: Failed blocking writer");
+}
+
+void exitWrite() {
+    if (semop(semID, &up[0], 1) < 0)
+        perror("Error on exitWrite: Failed unblocking writer");
 }

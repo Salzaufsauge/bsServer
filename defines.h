@@ -6,6 +6,7 @@
 #define INVALID_CHARACTERS "!§$%&/()=?`^°;:_,.-#+*~´`?\"’"
 #define KEY_NAME_LENGTH BUFFER_SIZE / 4
 #define KEY_VALUE_LENGTH BUFFER_SIZE - KEY_NAME_LENGTH
+#define MAX_CAPACITY 10000
 
 constexpr char commandList[] = "HELP - usage: HELP - Sends a list of possible commands - HELP\n"
                                "QUIT - usage: QUIT - Disconnects user from server\n"

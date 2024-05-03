@@ -6,25 +6,38 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <signal.h>
+#include <sys/sem.h>
 #include "defines.h"
 #include "helper.h"
 #include "keyValStore.h"
 
-int startServer();
+void sig_handler(int signum);
 
-void mainLoop(const int *serverSocket);
+int startServer(int *shmid, KeyList *keys);
 
-void handleClient(int *clientSocket);
+void closeServer(const int *sockfd, const int *shmid, const KeyList *keys);
 
-void analyze(int *socket, char *buffer);
+void mainLoop(const int *serverSocket, KeyList* keys);
+
+void handleClient(int *clientSocket, KeyList* keys);
+
+void analyze(int *socket,KeyList* keys , char *buffer);
 
 void quit(const int *socket);
 
-int put(char *key, char *val);
+int put(KeyList *keys, char *key, char *val);
 
-int get(char *key, char *res);
+int get(KeyList *keys, char *key, char *res);
 
-int del(char *key);
+int del(KeyList *keys,char *key);
 
+void enterRead();
+void exitRead();
+
+void enterWrite();
+void exitWrite();
 
 #endif //SUB_H

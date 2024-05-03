@@ -1,5 +1,6 @@
 #include "helper.h"
 
+#include "sub.h"
 
 
 int isNullOrEmpty(char *str) {
