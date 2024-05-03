@@ -5,12 +5,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/socket.h>
 #include "defines.h"
 
 int isNullOrEmpty(char *str);
 
-int sendFormatedSocket(int *socket, char *cmd, char *key, char *val);
-int sendToSocket(const int *socket, const char *msg);
+int sendToSocket(const int socket, const char *msg);
 
 void error(const char *msg,int exitcode);
 
