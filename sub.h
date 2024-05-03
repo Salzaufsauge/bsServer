@@ -16,21 +16,29 @@
 
 void sig_handler(int signum);
 
-int startServer(int *shmid, KeyList *keys);
+int startServer();
 
-void closeServer(const int *sockfd, const int *shmid, const KeyList *keys);
+void createSemaphores();
 
-void mainLoop(const int *serverSocket, KeyList* keys);
+int createSocket();
 
-void handleClient(int *clientSocket, KeyList* keys);
+void bindSocket(int serverSocket);
 
-void analyze(int *socket,KeyList* keys , char *buffer);
+void listenSocket(int serverSocket);
 
-void quit(const int *socket);
+void closeServer(const int serverSocket, const int shmid, const KeyList *keys);
+
+void mainLoop(int serverSocket, KeyList* keys);
+
+void handleClient(int clientSocket, KeyList* keys);
+
+void analyze(int serverSocket,KeyList* keys , char *buffer);
+
+void quit(int clientSocket);
 
 int put(KeyList *keys, char *key, char *val);
 
-int get(KeyList *keys, char *key, char *res);
+int get(const KeyList *keys, char *key, char *res);
 
 int del(KeyList *keys,char *key);
 

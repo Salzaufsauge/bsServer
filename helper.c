@@ -1,13 +1,10 @@
 #include "helper.h"
 
-#include "sub.h"
-
-
 int isNullOrEmpty(char *str) {
     return !(int)str || !*str;
 }
 
-int sendFormatedSocket(int *socket, char *cmd, char *key, char *val) {
+int sendFormatedSocket(const int socket, char *cmd, char *key, char *val) {
     if (isNullOrEmpty(key) || isNullOrEmpty(val)) {
         perror("Error: Key/Value missing");
         sendToSocket(socket, "Error: Invalid input\n");
@@ -21,8 +18,8 @@ int sendFormatedSocket(int *socket, char *cmd, char *key, char *val) {
 }
 
 
-int sendToSocket(const int *socket, const char *msg) {
-    if (send(*socket, msg, strlen(msg),0) < 0) {
+int sendToSocket(const int socket, const char *msg) {
+    if (send(socket, msg, strlen(msg),0) < 0) {
         perror("Error: Failed writing to socket!");
         return -1;
     }
