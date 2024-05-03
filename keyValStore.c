@@ -31,9 +31,7 @@ int deleteFromList(KeyList targetList[], const int element) {
         perror("Error: invalid element");
         return -1;
     }
-    Key temp = targetList->key[element];
     targetList->key[element] = targetList->key[targetList->curSize];
-    targetList->key[targetList->curSize] = temp;
     targetList->curSize--;
     return 0;
 }

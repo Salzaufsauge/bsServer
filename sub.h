@@ -1,15 +1,16 @@
 #ifndef SUB_H
 #define SUB_H
 
+#include <signal.h>
 #include <stdio.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <string.h>
 #include <unistd.h>
+#include <netinet/in.h>
 #include <sys/ipc.h>
-#include <sys/shm.h>
-#include <signal.h>
 #include <sys/sem.h>
+#include <sys/shm.h>
+#include <sys/socket.h>
+
 #include "defines.h"
 #include "helper.h"
 #include "keyValStore.h"
@@ -41,6 +42,8 @@ int put(KeyList *keys, char *key, char *val);
 int get(const KeyList *keys, char *key, char *res);
 
 int del(KeyList *keys,char *key);
+
+int sendFormatedSocket(int socket, char *cmd, char *key, char *val);
 
 void enterRead();
 void exitRead();

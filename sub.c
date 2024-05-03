@@ -251,6 +251,19 @@ int del(KeyList *keys, char *key) {
     return -1;
 }
 
+int sendFormatedSocket(const int socket, char *cmd, char *key, char *val) {
+    if (isNullOrEmpty(key) || isNullOrEmpty(val)) {
+        perror("Error: Key/Value missing");
+        sendToSocket(socket, "Error: Invalid input\n");
+        return -1;
+    }
+
+    char str[BUFFER_SIZE + 3];
+    sprintf(str, "%s:%s:%s\n", cmd, key, val);
+
+    return sendToSocket(socket, str);
+}
+
 void enterRead() {
     if (semop(semID, &down[1], 1) < 0)
         perror("Error on enterRead: Failed blocking reader");
