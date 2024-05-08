@@ -3,25 +3,23 @@
 #include "sub.h"
 
 int main(int argc, char *argv[]) {
-    signal(SIGCHLD, SIG_IGN);
-    struct sigaction sa;
-    sa.sa_handler = sig_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGTERM, &sa, NULL);
+    setupSignals();
 
     createSemaphores();
 
-    int shmid= shmget(IPC_PRIVATE,sizeof(KeyList),0644|IPC_CREAT);
-    if(shmid < 0)
-        error("Error: Failed initializing shared memory",-1);
-    KeyList *keys = shmat(shmid,NULL,0);
+    const int shmid = initSharedMemory();
+    KeyList *keys = shmat(shmid,NULL, 0);
+    if (keys == (void *) -1)
+        error("Error attatching shared memory", 1);
     //init value storage
     keys->curSize = 0;
+    keys->transactionInProgress = 0;
+
+    const int msgid = initMsgQueue();
 
     //startup server
-    int sockfd = startServer();
-    mainLoop(sockfd, keys);
+    const int sockfd = startServer();
+    mainLoop(sockfd, msgid, keys);
     closeServer(sockfd, shmid, keys);
     return 0;
 }

@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include "defines.h"
 
-int isNullOrEmpty(char *str);
+int isNullOrEmpty(const char *str);
 
 int sendToSocket(const int socket, const char *msg);
 
