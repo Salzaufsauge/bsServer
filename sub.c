@@ -262,7 +262,7 @@ int put(KeyList *keys, Subscribers *subs, char *key, char *val) {
     enterWrite();
 
     //If key already exists overwrites old key
-    const int keyCapacity = keys->curSize + 1;
+    const int keyCapacity = keys->curSize;
     for (int i = 0; i < keyCapacity; i++) {
         if (!strcmp(key, keys->key[i].keyName)) {
             if (overwrite(keys, newKey, i) < 0) {
@@ -292,7 +292,7 @@ int get(const KeyList *keys, char *key, char *res) {
     enterRead();
 
     //look if key exists if yes copy string into res
-    const int keyCapacity = keys->curSize + 1;
+    const int keyCapacity = keys->curSize;
     for (int i = 0; i < keyCapacity; i++) {
         if (!strcmp(key, keys->key[i].keyName)) {
             strcpy(res, keys->key[i].keyVal);
@@ -316,7 +316,7 @@ int del(KeyList *keys, Subscribers *subs, char *key) {
     enterWrite();
 
     //If key exists delete it
-    const int keyCapacity = keys->curSize + 1;
+    const int keyCapacity = keys->curSize;
     for (int i = 0; i < keyCapacity; i++) {
         if (!strcmp(key, keys->key[i].keyName)) {
             *subs = keys->key[i].subs;
@@ -344,6 +344,7 @@ void beg(const int clientSocket, KeyList *keys) {
     }
     exitWrite();
     transactionOwner = 1;
+    sendToSocket(clientSocket,"Beginning transaction");
 }
 
 void end(const int clientSocket, KeyList *keys) {
@@ -359,6 +360,7 @@ void end(const int clientSocket, KeyList *keys) {
     }
     exitWrite();
     transactionOwner = 0;
+    sendToSocket(clientSocket,"Ending transaction");
 }
 
 int sub(int pid, int clientSocket, KeyList *keys, Key *key) {
